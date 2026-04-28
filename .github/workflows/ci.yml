@@ -141,7 +141,7 @@ jobs:
           projectBaseDir: reclamation-app/frontend
           args: >
             -Dsonar.projectKey=brahim-guenni_reclamation-frontend
-            -Dsonar.projectName="Reclamation Frontend"
+            -Dsonar.projectName=Reclamation-Frontend
             -Dsonar.organization=brahim-guenni
             -Dsonar.sources=src
             -Dsonar.exclusions=**/node_modules/**,**/*.spec.ts
