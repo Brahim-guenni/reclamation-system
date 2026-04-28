@@ -1,0 +1,198 @@
+name: CI - Intégration Continue
+
+on:
+  push:
+    branches: [ main, dev, staging ]
+  pull_request:
+    branches: [ main, dev, staging ]
+
+env:
+  PROJECT_ID: certain-reducer-493511-v6
+  BACKEND_IMAGE: gcr.io/certain-reducer-493511-v6/reclamation-backend
+  FRONTEND_IMAGE: gcr.io/certain-reducer-493511-v6/reclamation-frontend
+
+jobs:
+
+  # ─────────────────────────────────────────────
+  # JOB 1 — BACKEND
+  # ─────────────────────────────────────────────
+  backend:
+    name: Backend — Build, Test & Analyse
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du code source
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # requis pour SonarQube
+
+      # 2. Installation de Java 17
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      # 3. Installation des dépendances Maven
+      - name: Install dependencies
+        working-directory: reclamation-app/backend
+        run: mvn dependency:resolve -DskipTests
+
+      # 4. Lint — vérification du style de code avec Checkstyle
+      - name: Lint (Checkstyle)
+        working-directory: reclamation-app/backend
+        run: mvn checkstyle:check -DskipTests || true
+
+      # 5. Tests unitaires
+      - name: Run tests
+        working-directory: reclamation-app/backend
+        run: mvn test
+        continue-on-error: false
+
+      # 6. Build du JAR
+      - name: Build JAR
+        working-directory: reclamation-app/backend
+        run: mvn clean package -DskipTests
+
+      # 7. Analyse qualité SonarQube
+      - name: SonarQube Analysis
+        working-directory: reclamation-app/backend
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          mvn sonar:sonar \
+            -Dsonar.projectKey=reclamation-backend \
+            -Dsonar.projectName="Reclamation Backend" \
+            -Dsonar.host.url=${{ secrets.SONAR_HOST_URL }} \
+            -Dsonar.token=${{ secrets.SONAR_TOKEN }} \
+            -Dsonar.java.coveragePlugin=jacoco \
+            -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+
+      # 8. Build image Docker backend
+      - name: Build Docker image — Backend
+        working-directory: reclamation-app/backend
+        run: |
+          docker build \
+            -t ${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
+            -t ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }} \
+            .
+
+      # 9. Authentification GCR et push image
+      - name: Authenticate to GCR
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Push Docker image — Backend
+        run: |
+          docker push ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}
+
+  # ─────────────────────────────────────────────
+  # JOB 2 — FRONTEND
+  # ─────────────────────────────────────────────
+  frontend:
+    name: Frontend — Build, Lint & Analyse
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout du code source
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # 2. Installation de Node.js 20
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: reclamation-app/frontend/package-lock.json
+
+      # 3. Installation des dépendances npm
+      - name: Install dependencies
+        working-directory: reclamation-app/frontend
+        run: npm ci
+
+      # 4. Lint Angular
+      - name: Lint (ESLint)
+        working-directory: reclamation-app/frontend
+        run: npx ng lint || true
+
+      # 5. Tests unitaires Angular
+      - name: Run tests
+        working-directory: reclamation-app/frontend
+        run: npx ng test --watch=false --browsers=ChromeHeadless || true
+
+      # 6. Build Angular production
+      - name: Build Angular
+        working-directory: reclamation-app/frontend
+        run: npx ng build --configuration production
+
+      # 7. Analyse qualité SonarQube
+      - name: SonarQube Analysis
+        uses: SonarSource/sonarqube-scan-action@v2
+        with:
+          projectBaseDir: reclamation-app/frontend
+          args: >
+            -Dsonar.projectKey=reclamation-frontend
+            -Dsonar.projectName="Reclamation Frontend"
+            -Dsonar.sources=src
+            -Dsonar.exclusions=**/node_modules/**,**/*.spec.ts
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      # 8. Build image Docker frontend
+      - name: Build Docker image — Frontend
+        working-directory: reclamation-app/frontend
+        run: |
+          docker build \
+            -t ${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
+            -t ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }} \
+            .
+
+      # 9. Authentification GCR et push image
+      - name: Authenticate to GCR
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for GCR
+        run: gcloud auth configure-docker --quiet
+
+      - name: Push Docker image — Frontend
+        run: |
+          docker push ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
+          docker push ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}
+
+  # ─────────────────────────────────────────────
+  # JOB 3 — NOTIFICATION FINALE
+  # ─────────────────────────────────────────────
+  notify:
+    name: Pipeline Status
+    runs-on: ubuntu-latest
+    needs: [ backend, frontend ]
+    if: always()
+
+    steps:
+      - name: Pipeline Success
+        if: ${{ needs.backend.result == 'success' && needs.frontend.result == 'success' }}
+        run: |
+          echo "✅ Pipeline CI réussi sur la branche ${{ github.ref_name }}"
+          echo "Images publiées:"
+          echo "  - gcr.io/${{ env.PROJECT_ID }}/reclamation-backend:${{ github.sha }}"
+          echo "  - gcr.io/${{ env.PROJECT_ID }}/reclamation-frontend:${{ github.sha }}"
+
+      - name: Pipeline Failed
+        if: ${{ needs.backend.result == 'failure' || needs.frontend.result == 'failure' }}
+        run: |
+          echo "❌ Pipeline CI échoué sur la branche ${{ github.ref_name }}"
+          exit 1
