@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { Observable, tap } from 'rxjs';
 import { AuthResponse, LoginRequest, RegisterRequest, CreateAgentRequest } from '../models/auth.models';
 
-const API = 'http://localhost:8082/api/auth';
+const API = '/api/auth';
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
@@ -38,12 +38,10 @@ export class AuthService {
   }
 
   getToken(): string | null { return localStorage.getItem('token'); }
-
   getUser(): AuthResponse | null {
     const u = localStorage.getItem('user');
     return u ? JSON.parse(u) : null;
   }
-
   isLoggedIn(): boolean { return !!this.getToken(); }
   isAdmin(): boolean { return this.getUser()?.role === 'ADMIN'; }
   isClient(): boolean { return this.getUser()?.role === 'CLIENT'; }

@@ -1,0 +1,32 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: reclamation-prod
+
+bases:
+  - ../../base
+
+namePrefix: prod-
+
+commonLabels:
+  environment: prod
+
+images:
+  - name: gcr.io/certain-reducer-493511-v6/reclamation-backend
+    newTag: v9
+  - name: gcr.io/certain-reducer-493511-v6/reclamation-frontend
+    newTag: v2
+
+patches:
+  - path: patches.yaml
+
+resources:
+  - hpa.yaml
+  - backend-configmap.yaml
+
+secretGenerator:
+  - name: mysql-secret
+    literals:
+      - root-password=prod_STRONG_password_789!
+    options:
+      disableNameSuffixHash: true

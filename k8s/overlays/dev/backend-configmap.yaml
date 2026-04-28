@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: reclamation-dev
+data:
+  datasource-url: "jdbc:mysql://dev-mysql-service:3306/reclamation_db?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true"

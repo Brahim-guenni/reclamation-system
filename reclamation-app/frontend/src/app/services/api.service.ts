@@ -3,7 +3,8 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Client, AgentSAV, Reclamation, SuiviReclamation, Rapport } from '../models/models';
 
-const API = 'http://localhost:8082/api';
+// Relative path — works on localhost AND in Kubernetes via nginx proxy
+const API = '/api';
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
@@ -34,11 +35,11 @@ export class ApiService {
   }
   getRapport(): Observable<Rapport> { return this.http.get<Rapport>(`${API}/reclamations/rapport`); }
 
-  // Réclamations - CLIENT (own)
+  // Réclamations - CLIENT
   getMesReclamations(): Observable<Reclamation[]> { return this.http.get<Reclamation[]>(`${API}/reclamations/mes`); }
   createReclamation(r: any): Observable<Reclamation> { return this.http.post<Reclamation>(`${API}/reclamations`, r); }
 
-  // Réclamations - AGENT_SAV (assigned)
+  // Réclamations - AGENT_SAV
   getMesAssignations(): Observable<Reclamation[]> { return this.http.get<Reclamation[]>(`${API}/reclamations/assignees`); }
 
   // Suivis
@@ -47,7 +48,6 @@ export class ApiService {
   }
   createSuivi(s: any): Observable<SuiviReclamation> { return this.http.post<SuiviReclamation>(`${API}/suivis`, s); }
 
-  // kept for compatibility
   findReclamationsByClient(clientId: number): Observable<Reclamation[]> {
     return this.http.get<Reclamation[]>(`${API}/reclamations/client/${clientId}`);
   }

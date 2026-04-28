@@ -1,0 +1,46 @@
+steps:
+  # 1. Build backend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/certain-reducer-493511-v6/reclamation-backend:$BRANCH_NAME'
+      - '-t'
+      - 'gcr.io/certain-reducer-493511-v6/reclamation-backend:$SHORT_SHA'
+      - './reclamation-app/backend'
+
+  # 2. Build frontend Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - 'gcr.io/certain-reducer-493511-v6/reclamation-frontend:$BRANCH_NAME'
+      - '-t'
+      - 'gcr.io/certain-reducer-493511-v6/reclamation-frontend:$SHORT_SHA'
+      - './reclamation-app/frontend'
+
+  # 3. Push images to GCR
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/certain-reducer-493511-v6/reclamation-backend:$BRANCH_NAME']
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/certain-reducer-493511-v6/reclamation-frontend:$BRANCH_NAME']
+
+  # 4. Deploy to the right environment based on branch
+  - name: 'gcr.io/cloud-builders/kubectl'
+    args:
+      - 'apply'
+      - '-k'
+      - 'k8s/overlays/$_ENV'
+    env:
+      - 'CLOUDSDK_COMPUTE_ZONE=$_ZONE'
+      - 'CLOUDSDK_CONTAINER_CLUSTER=$_CLUSTER'
+
+substitutions:
+  _ENV: dev          # overridden by trigger: dev | staging | prod
+  _ZONE: europe-west1-b
+  _CLUSTER: reclamation-cluster
+
+# Branch → environment mapping (set in GCP Build Triggers UI):
+# branch: dev     → _ENV=dev
+# branch: staging → _ENV=staging
+# branch: main    → _ENV=prod
