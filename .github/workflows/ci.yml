@@ -61,12 +61,11 @@ jobs:
         working-directory: reclamation-app/backend
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
         run: |
           mvn sonar:sonar \
-            -Dsonar.projectKey=reclamation-backend \
+            -Dsonar.projectKey=brahim-guenni_reclamation-backend \
             -Dsonar.projectName="Reclamation Backend" \
-            -Dsonar.organization=${{ secrets.SONAR_ORG }} \
+            -Dsonar.organization=brahim-guenni \
             -Dsonar.host.url=https://sonarcloud.io \
             -Dsonar.token=${{ secrets.SONAR_TOKEN }}
 
@@ -141,9 +140,9 @@ jobs:
         with:
           projectBaseDir: reclamation-app/frontend
           args: >
-            -Dsonar.projectKey=reclamation-frontend
+            -Dsonar.projectKey=brahim-guenni_reclamation-frontend
             -Dsonar.projectName="Reclamation Frontend"
-            -Dsonar.organization=${{ secrets.SONAR_ORG }}
+            -Dsonar.organization=brahim-guenni
             -Dsonar.sources=src
             -Dsonar.exclusions=**/node_modules/**,**/*.spec.ts
         env:
