@@ -3,6 +3,8 @@ name: CI - Intégration Continue
 on:
   push:
     branches: [ main, dev, staging ]
+    paths-ignore:
+      - 'k8s/overlays/**/kustomization.yaml'  # ignore CD commits
   pull_request:
     branches: [ main, dev, staging ]
 
