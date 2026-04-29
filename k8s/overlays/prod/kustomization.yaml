@@ -12,10 +12,10 @@ commonLabels:
 images:
 - name: gcr.io/certain-reducer-493511-v6/reclamation-backend
   newName: gcr.io/certain-reducer-493511-v6/reclamation-backend
-  newTag: ea3cbcab6c402e02c5cfe630fd39616d9bdf46f5
+  newTag: 14b61550d7af4dd11bd50b9db2b6b5db7dd10e67
 - name: gcr.io/certain-reducer-493511-v6/reclamation-frontend
   newName: gcr.io/certain-reducer-493511-v6/reclamation-frontend
-  newTag: ea3cbcab6c402e02c5cfe630fd39616d9bdf46f5
+  newTag: 14b61550d7af4dd11bd50b9db2b6b5db7dd10e67
 
 patches:
 - path: patches.yaml
