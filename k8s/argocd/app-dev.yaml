@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: reclamation-dev
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/brahim-guenni/reclamation-system
+    targetRevision: dev
+    path: k8s/overlays/dev
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: reclamation-dev
+  syncPolicy:
+    automated:
+      prune: true       # supprime les ressources obsolètes
+      selfHeal: true    # resynchronise si quelqu'un modifie manuellement
+    syncOptions:
+      - CreateNamespace=true

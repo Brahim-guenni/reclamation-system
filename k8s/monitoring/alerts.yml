@@ -1,0 +1,32 @@
+groups:
+  - name: reclamation-alerts
+    rules:
+      # Alert if backend is down
+      - alert: BackendDown
+        expr: up{job=~"reclamation-backend.*"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend is down"
+          description: "Backend {{ $labels.job }} has been down for more than 1 minute."
+
+      # Alert if response time is too high
+      - alert: HighResponseTime
+        expr: http_server_requests_seconds_max{job=~"reclamation-backend.*"} > 2
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time detected"
+          description: "Response time is above 2s for {{ $labels.job }}"
+
+      # Alert if JVM memory usage is high
+      - alert: HighMemoryUsage
+        expr: jvm_memory_used_bytes{area="heap"} / jvm_memory_max_bytes{area="heap"} > 0.85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High JVM heap memory usage"
+          description: "JVM heap usage is above 85% for {{ $labels.job }}"
