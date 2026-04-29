@@ -19,6 +19,8 @@ spec:
           image: mysql:8.0
           ports:
             - containerPort: 3306
+          securityContext:
+            allowPrivilegeEscalation: false
           env:
             - name: MYSQL_ROOT_PASSWORD
               valueFrom:

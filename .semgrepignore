@@ -1,0 +1,2 @@
+# Actuator endpoints are intentionally exposed for Prometheus monitoring
+reclamation-app/backend/src/main/resources/application.properties

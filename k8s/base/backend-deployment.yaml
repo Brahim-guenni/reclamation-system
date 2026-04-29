@@ -20,6 +20,10 @@ spec:
           image: gcr.io/certain-reducer-493511-v6/reclamation-backend:dev
           ports:
             - containerPort: 8080
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 1000
           env:
             - name: SPRING_DATASOURCE_URL
               valueFrom:

@@ -18,6 +18,10 @@ spec:
           image: prom/prometheus:latest
           ports:
             - containerPort: 9090
+          securityContext:
+            allowPrivilegeEscalation: false
+            runAsNonRoot: true
+            runAsUser: 65534
           volumeMounts:
             - name: config
               mountPath: /etc/prometheus/prometheus.yml

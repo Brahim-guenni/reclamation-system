@@ -29,8 +29,10 @@ jobs:
       # 2. Determine environment from branch
       - name: Set environment
         id: env
+        env:
+          BRANCH: ${{ github.event.workflow_run.head_branch }}
+          SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          BRANCH="${{ github.event.workflow_run.head_branch }}"
           if [ "$BRANCH" = "main" ]; then
             echo "ENV=prod" >> $GITHUB_OUTPUT
             echo "OVERLAY=k8s/overlays/prod" >> $GITHUB_OUTPUT
@@ -41,7 +43,7 @@ jobs:
             echo "ENV=dev" >> $GITHUB_OUTPUT
             echo "OVERLAY=k8s/overlays/dev" >> $GITHUB_OUTPUT
           fi
-          echo "SHA=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_OUTPUT
+          echo "SHA=$SHA" >> $GITHUB_OUTPUT
 
       # 3. Install kustomize
       - name: Install Kustomize

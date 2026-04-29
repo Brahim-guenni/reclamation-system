@@ -72,10 +72,14 @@ jobs:
       # 8. Build image Docker backend
       - name: Build Docker image — Backend
         working-directory: reclamation-app/backend
+        env:
+          BACKEND_IMG: ${{ env.BACKEND_IMAGE }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
         run: |
           docker build \
-            -t ${{ env.BACKEND_IMAGE }}:${{ github.sha }} \
-            -t ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }} \
+            -t "$BACKEND_IMG:$SHA" \
+            -t "$BACKEND_IMG:$REF" \
             .
 
       # 9. Authentification GCR et push image
@@ -88,9 +92,13 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Push Docker image — Backend
+        env:
+          BACKEND_IMG: ${{ env.BACKEND_IMAGE }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
         run: |
-          docker push ${{ env.BACKEND_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.BACKEND_IMAGE }}:${{ github.ref_name }}
+          docker push "$BACKEND_IMG:$SHA"
+          docker push "$BACKEND_IMG:$REF"
 
   # ─────────────────────────────────────────────
   # JOB 2 — FRONTEND
@@ -152,10 +160,14 @@ jobs:
       # 8. Build image Docker frontend
       - name: Build Docker image — Frontend
         working-directory: reclamation-app/frontend
+        env:
+          FRONTEND_IMG: ${{ env.FRONTEND_IMAGE }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
         run: |
           docker build \
-            -t ${{ env.FRONTEND_IMAGE }}:${{ github.sha }} \
-            -t ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }} \
+            -t "$FRONTEND_IMG:$SHA" \
+            -t "$FRONTEND_IMG:$REF" \
             .
 
       # 9. Authentification GCR et push image
@@ -168,9 +180,13 @@ jobs:
         run: gcloud auth configure-docker --quiet
 
       - name: Push Docker image — Frontend
+        env:
+          FRONTEND_IMG: ${{ env.FRONTEND_IMAGE }}
+          SHA: ${{ github.sha }}
+          REF: ${{ github.ref_name }}
         run: |
-          docker push ${{ env.FRONTEND_IMAGE }}:${{ github.sha }}
-          docker push ${{ env.FRONTEND_IMAGE }}:${{ github.ref_name }}
+          docker push "$FRONTEND_IMG:$SHA"
+          docker push "$FRONTEND_IMG:$REF"
 
   # ─────────────────────────────────────────────
   # JOB 3 — NOTIFICATION FINALE
@@ -184,14 +200,20 @@ jobs:
     steps:
       - name: Pipeline Success
         if: ${{ needs.backend.result == 'success' && needs.frontend.result == 'success' }}
+        env:
+          REF: ${{ github.ref_name }}
+          SHA: ${{ github.sha }}
+          PID: ${{ env.PROJECT_ID }}
         run: |
-          echo "✅ Pipeline CI réussi sur la branche ${{ github.ref_name }}"
+          echo "✅ Pipeline CI réussi sur la branche $REF"
           echo "Images publiées:"
-          echo "  - gcr.io/${{ env.PROJECT_ID }}/reclamation-backend:${{ github.sha }}"
-          echo "  - gcr.io/${{ env.PROJECT_ID }}/reclamation-frontend:${{ github.sha }}"
+          echo "  - gcr.io/$PID/reclamation-backend:$SHA"
+          echo "  - gcr.io/$PID/reclamation-frontend:$SHA"
 
       - name: Pipeline Failed
         if: ${{ needs.backend.result == 'failure' || needs.frontend.result == 'failure' }}
+        env:
+          REF: ${{ github.ref_name }}
         run: |
-          echo "❌ Pipeline CI échoué sur la branche ${{ github.ref_name }}"
+          echo "❌ Pipeline CI échoué sur la branche $REF"
           exit 1
