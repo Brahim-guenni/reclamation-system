@@ -44,7 +44,7 @@ import { AuthService } from '../../services/auth.service';
   template: `
     <div class="login-wrapper">
       <div class="login-card card p-4">
-
+        <h1>Welcome Home</h1> 
         <!-- Logo -->
         <div class="text-center mb-3">
           <div class="logo-circle"
