@@ -8,6 +8,10 @@ on:
   pull_request:
     branches: [ main, dev, staging ]
 
+permissions:
+  contents: read
+  security-events: write
+
 env:
   BACKEND_IMAGE: gcr.io/certain-reducer-493511-v6/reclamation-backend
   FRONTEND_IMAGE: gcr.io/certain-reducer-493511-v6/reclamation-frontend
@@ -66,19 +70,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      # Scan dépendances Maven avec OWASP Dependency Check
-      - name: OWASP Dependency Check — Backend
-        working-directory: reclamation-app/backend
-        run: |
-          mvn org.owasp:dependency-check-maven:check \
-            -DfailBuildOnCVSS=9 \
-            -DskipTestScope=true
-        continue-on-error: false
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      # Scan dépendances Maven avec Trivy (plus rapide que OWASP)
+      - name: Trivy dependency scan — Backend
+        uses: aquasecurity/trivy-action@master
         with:
-          node-version: '20'
+          scan-type: fs
+          scan-ref: reclamation-app/backend
+          format: table
+          exit-code: '1'
+          severity: CRITICAL
+          vuln-type: library
 
       # Scan dépendances npm
       - name: npm audit — Frontend
@@ -88,20 +89,15 @@ jobs:
           npm audit --audit-level=critical
         continue-on-error: false
 
-      # Upload rapport OWASP
-      - name: Upload OWASP report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: owasp-dependency-report
-          path: reclamation-app/backend/target/dependency-check-report.html
-
   # ─────────────────────────────────────────────
   # JOB 3 — SCAN IMAGE DOCKER (TRIVY)
   # ─────────────────────────────────────────────
   image-scan:
     name: Docker Image Scan (Trivy)
     runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
 
     steps:
       - name: Checkout code
@@ -157,7 +153,7 @@ jobs:
           exit-code: '0'
 
       - name: Upload Trivy SARIF to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-results.sarif
