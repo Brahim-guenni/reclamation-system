@@ -3,8 +3,6 @@ kind: Kustomization
 
 namespace: reclamation-prod
 
-bases:
-  - ../../base
 
 namePrefix: prod-
 
@@ -12,21 +10,24 @@ commonLabels:
   environment: prod
 
 images:
-  - name: gcr.io/certain-reducer-493511-v6/reclamation-backend
-    newTag: v9
-  - name: gcr.io/certain-reducer-493511-v6/reclamation-frontend
-    newTag: v2
+- name: gcr.io/certain-reducer-493511-v6/reclamation-backend
+  newName: gcr.io/certain-reducer-493511-v6/reclamation-backend
+  newTag: 90e96c162fe90a2da5f31100bbcf2bf13bffb19c
+- name: gcr.io/certain-reducer-493511-v6/reclamation-frontend
+  newName: gcr.io/certain-reducer-493511-v6/reclamation-frontend
+  newTag: 90e96c162fe90a2da5f31100bbcf2bf13bffb19c
 
 patches:
-  - path: patches.yaml
+- path: patches.yaml
 
 resources:
-  - hpa.yaml
-  - backend-configmap.yaml
+- hpa.yaml
+- backend-configmap.yaml
+- ../../base
 
 secretGenerator:
-  - name: mysql-secret
-    literals:
-      - root-password=prod_STRONG_password_789!
-    options:
-      disableNameSuffixHash: true
+- literals:
+  - root-password=prod_STRONG_password_789!
+  name: mysql-secret
+  options:
+    disableNameSuffixHash: true
